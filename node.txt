@@ -1,0 +1,6 @@
+yarn add sequelize
+npm i -g sequelize-auto
+npm i -g mariadb
+
+
+# sequelize-auto -h <HOST/IP> -d <DB-NAME> -u <USER> -x <PASS> -p 3306 -e mariadb --cm c -s public  -o ./src/db/models -l ts
