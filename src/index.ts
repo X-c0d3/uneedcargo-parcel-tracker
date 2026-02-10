@@ -1,12 +1,9 @@
 import _ from 'lodash';
 import express from 'express';
-import dotenv from 'dotenv';
 import packageRouter from './routes/package';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 app.use(express.json());
 app.use('/api', packageRouter);

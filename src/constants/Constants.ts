@@ -1,5 +1,21 @@
 import os from 'os';
 import path from 'path';
+import dotenv from 'dotenv';
+import fs from 'fs';
+
+const rootPath = process.cwd();
+const envLocalPath = path.resolve(rootPath, '.env.local');
+const envPath = path.resolve(rootPath, '.env');
+
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
+  console.log('✅ Loaded: .env.local');
+} else if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+  console.log('ℹ️ Loaded: .env');
+} else {
+  console.warn('⚠️ No .env or .env.local found');
+}
 
 const desktopDir = path.join(os.homedir(), 'Desktop');
 const AppConfig = {
@@ -7,6 +23,9 @@ const AppConfig = {
   USERNAME: process.env.USERNAME,
   ENABLE_LINE_NOTIFY: process.env.ENABLE_LINE_NOTIFY,
   LINE_TOKEN: process.env.LINE_TOKEN,
+  LINE_SENDER_ID: process.env.LINE_SENDER_ID,
+  TELEGRAM_API_KEY: process.env.TELEGRAM_API_KEY,
+  TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
   CURRENCY: process.env.CURRENCY,
   EXCHANGE_RATE_USD: process.env.EXCHANGE_RATE_USD,
   COOKIE: process.env.COOKIE,

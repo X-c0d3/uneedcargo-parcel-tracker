@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import 'dotenv/config';
 import axios from 'axios';
 import { Op } from 'sequelize';
 import { JSDOM } from 'jsdom';
@@ -8,6 +7,8 @@ import { toSafeNumber } from '../util/Helper';
 import Db from '../db/config';
 import { productImports } from '../db/models/productImports';
 import { jobs } from '../db/models/jobs';
+import { sendTelegramNotify } from '../util/TelegramNotify';
+import { sendLineNotify } from '../util/LineNotify';
 
 const DEFAULT_PAGE = process.env.DEFAULT_PAGE || 1;
 
@@ -54,6 +55,10 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
         itemIn.map((v: any) => ` - importeId: ${v.importeId}, orderNo: ${v.orderNo}, parcelNumber: ${v.trackingNo} (${v.status?.statusName}) | ${v.product.productName} | # ${v.shippingCost}THB`),
       );
 
+      var itemImportings: any = [];
+      var itemArrived: any = [];
+      var itemReadyForShipping: any = [];
+
       productImportings
         .filter((v: any) => allparcelNumber.includes(v.trackingNo ?? ''))
         ?.forEach(async (item: productImports, index: number) => {
@@ -65,27 +70,34 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
           // 6	ระหว่างนำส่งในไทย
 
           const { importeId, statusTypeId, shippingCost } = item;
-          const { parcelNumber, arrivalDate, totalPrice, paymentStatus } = matchedPackage || {};
+          const { parcelNumber, arrivalDate, totalPrice, paymentStatus, productName } = matchedPackage || {};
           if (matchedPackage) {
             // สั่งชื้อแล้ว --> อยู่ระหว่างนำเข้า
             if (statusTypeId === 3 && (totalPrice ?? 0) > 0) {
               console.log(`importeId: ${importeId} / ${parcelNumber} | statusTypeId: ${statusTypeId} | สั่งชื้อแล้ว --> อยู่ระหว่างนำเข้า`);
+              itemImportings.push({ ...item, ...matchedPackage });
               await Db.productImports.update({ statusTypeId: 4, shippingCost: totalPrice, modifiedDatetime: new Date() }, { where: { importeId: importeId } });
             }
 
             // อยู่ระหว่างนำเข้า --> ถึงไทยแล้ว
             if (statusTypeId === 4 && arrivalDate !== '-' && (shippingCost ?? 0) > 0) {
-              console.log(`importeId: ${importeId} / ${parcelNumber} | statusTypeId: ${statusTypeId} | อยู่ระหว่างนำเข้า --> ถึงไทยแล้ว | arrivalDate: ${arrivalDate}`);
+              console.log(`importeId: ${importeId} / ${parcelNumber} | statusTypeId: ${statusTypeId} | อยู่ระหว่างนำเข้า --> ถึงไทยแล้ว | arrivalDate: ${arrivalDate} | ${productName}`);
+              itemArrived.push({ ...item, ...matchedPackage });
               await Db.productImports.update({ statusTypeId: 5, modifiedDatetime: new Date() }, { where: { importeId: importeId, isDeleted: 0 } });
             }
 
             // ถึงไทยแล้ว --> ระหว่างนำส่งในไทย
             if (statusTypeId === 5 && arrivalDate !== '-' && paymentStatus !== '-' && (shippingCost ?? 0) > 0) {
               console.log(`importeId: ${importeId} / ${parcelNumber} | statusTypeId: ${statusTypeId} | ถึงไทยแล้ว --> ระหว่างนำส่งในไทย`);
+              itemReadyForShipping.push({ ...item, ...matchedPackage });
               await Db.productImports.update({ statusTypeId: 6, modifiedDatetime: new Date() }, { where: { importeId: importeId, isDeleted: 0 } });
             }
           }
         });
+
+      if (itemImportings.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+      if (itemArrived.length > 0) sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+      if (itemReadyForShipping.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
 
       //console.log(importedItems);
       //console.table(importedItems);

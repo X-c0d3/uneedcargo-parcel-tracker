@@ -7,26 +7,22 @@
 import axios from 'axios';
 import { AppConfig } from '../constants/Constants';
 
-const sendLineNotify = async (message: String) => {
-  console.log('sendLineNotify');
+const sendTelegramNotify = async (message: String) => {
+  console.log('sendTelegramNotify');
   await axios({
     method: 'post',
-    url: 'https://api.line.me/v2/bot/message/push',
+    url: `https://api.telegram.org/bot${AppConfig.TELEGRAM_API_KEY}/sendMessage`,
     timeout: 5000,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Bearer ${AppConfig.LINE_TOKEN}`,
     },
     data: {
-      to: AppConfig.LINE_SENDER_ID,
-      messages: [
-        {
-          type: 'text',
-          text: message,
-        },
-      ],
+      chat_id: AppConfig.TELEGRAM_CHAT_ID,
+      text: message,
+      parse_mode: 'HTML',
     },
   }).catch((err) => console.log(err));
 };
 
-export { sendLineNotify };
+export { sendTelegramNotify };
