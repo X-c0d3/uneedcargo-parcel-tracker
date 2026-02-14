@@ -9,16 +9,21 @@ import { AppConfig } from '../constants/Constants';
 
 const sendLineNotify = async (message: String) => {
   console.log('sendLineNotify');
+  const userIds = (AppConfig.LINE_SENDER_ID || '')
+    .split(/[,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   await axios({
     method: 'post',
-    url: 'https://api.line.me/v2/bot/message/push',
+    url: 'https://api.line.me/v2/bot/message/multicast',
     timeout: 5000,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${AppConfig.LINE_TOKEN}`,
     },
     data: {
-      to: AppConfig.LINE_SENDER_ID,
+      to: userIds,
       messages: [
         {
           type: 'text',
