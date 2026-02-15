@@ -96,7 +96,17 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
         });
 
       if (itemImportings.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
-      if (itemArrived.length > 0) sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+      if (itemArrived.length > 0) {
+        sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+
+        var itemReadyToSend = importedItems.filter((v: any) => v.paymentStatus === '-' && v.arrivalDate !== '-');
+        const totalPrice = itemReadyToSend.filter((v) => v.paymentStatus && v.totalPrice != null).reduce((sum, v) => sum + Number(v.totalPrice), 0);
+        const formattedTotal = totalPrice.toLocaleString('th-TH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        sendLineNotify(`มีพัสดุที่พร้อมเข้ารับ ${itemReadyToSend.length} รายการ\n ${itemReadyToSend.map((v: any, index: number) => `\n- ${index + 1}. ${v.orderNo} | ${v.parcelNumber} | ${v.productName} | ${v.totalPrice} THB`)} \n\nค่านำเข้าทั้งหมด ${formattedTotal} THB`);
+      }
       if (itemReadyForShipping.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.orderNo} / ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
 
       //console.log(importedItems);
