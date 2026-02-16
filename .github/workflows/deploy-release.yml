@@ -3,7 +3,7 @@ name: Deploy Release Branch
 on:
   push:
     branches:
-      - "release/[0-9].[0-9].[0-9]"
+      - "release/*"
 
 jobs:
   deploy:
@@ -15,27 +15,26 @@ jobs:
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }} # github.ref จะเป็น branch ที่คุณเลือกจาก dropdown
 
-      - name: Show selected branch (for log)
-        run: |
-          echo "Deploying from branch: ${{ github.ref_name }}"
+      - name: Show branch
+        run: echo "Deploying from ${{ github.ref_name }}"
 
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_BRANCH: ${{ github.ref_name }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_BRANCH
           script: |
-            cd ${{ secrets.APP_DIR }}
+            cd ${{ secrets.APP_DIR }} || exit 1
 
-            # Pull code จาก branch ที่เลือก (github.ref_name คือชื่อ branch เช่น release/0.0.1)
-            git fetch origin
-            git checkout ${{ github.ref_name }}
-            git pull origin ${{ github.ref_name }}
+            git fetch origin || exit 1
+            git checkout "$DEPLOY_BRANCH" || git checkout -b "$DEPLOY_BRANCH" "origin/$DEPLOY_BRANCH" || exit 1
+            git pull origin "$DEPLOY_BRANCH" || exit 1
 
             echo "# Auto-generated .env - Deploy from ${{ github.ref_name }}" > .env
             echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
@@ -51,8 +50,8 @@ jobs:
             echo "LINE_TOKEN=${{ secrets.LINE_TOKEN }}" >> .env
             echo "LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}" >> .env
 
-            docker compose build --no-cache
-            docker compose up -d --force-recreate --remove-orphans
+            docker compose build --no-cache || exit 1
+            docker compose up -d --force-recreate --remove-orphans || exit 1
             docker compose rm -f
 
             docker image prune -f --filter "label=com.docker.compose.project=uneed-cargo"
