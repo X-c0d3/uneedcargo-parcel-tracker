@@ -150,12 +150,13 @@ const getUneedCargoPackageList = async (job: jobs): Promise<PackageItem[]> => {
   const dom = new JSDOM(html);
   const document = dom.window.document;
 
-  const headerCells = document.querySelectorAll('thead tr th.hidden-xs.hidden-sm');
+  const headerCells = document.querySelectorAll('thead tr th');
   const headers = Array.from(headerCells).map((th) => th.textContent?.trim() || '');
   const rows = document.querySelectorAll('tbody tr');
 
   rows.forEach((row) => {
-    const cells = row.querySelectorAll('td.hidden-xs.hidden-sm');
+    const cells = row.querySelectorAll('td');
+
     if (cells.length === 0) return;
 
     const rowData: Partial<PackageItem> = {};
@@ -201,7 +202,7 @@ const login = async (job: jobs) => {
       'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
     },
   };
-  var response = await axios.post(`${api_url}/signingo`, `username=${username}&password=${password}`, HEADERS);
+  var response = await axios.post(`${api_url}/application/signin/go`, `username=${username}&password=${password}`, HEADERS);
   console.log('Login response ', response.data);
   const setCookieHeader = response.headers['set-cookie'];
   console.log('raw PHPSESSID ', setCookieHeader);
@@ -212,7 +213,7 @@ const login = async (job: jobs) => {
 
   let phpSessId = null;
   for (const cookieStr of setCookieHeader) {
-    if (cookieStr.includes('PHPSESSID=')) {
+    if (cookieStr.includes('uneed=')) {
       phpSessId = cookieStr.split(';')[0].trim();
       break;
     }
