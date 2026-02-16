@@ -1,0 +1,61 @@
+name: Deploy Release Branch
+
+on:
+  push:
+    branches:
+      - "release/[0-9].[0-9].[0-9]"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Optional: เพิ่ม protection ถ้าต้องการ (เช่น ต้อง approve ก่อน deploy production)
+    # environment: production  # แล้วตั้ง required reviewers ใน repo settings
+
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }} # github.ref จะเป็น branch ที่คุณเลือกจาก dropdown
+
+      - name: Show selected branch (for log)
+        run: |
+          echo "Deploying from branch: ${{ github.ref_name }}"
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd ${{ secrets.APP_DIR }}
+
+            # Pull code จาก branch ที่เลือก (github.ref_name คือชื่อ branch เช่น release/0.0.1)
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+
+            echo "# Auto-generated .env - Deploy from ${{ github.ref_name }}" > .env
+            echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
+            echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
+            echo "MYSQL_DIALECT=${{ secrets.MYSQL_DIALECT }}" >> .env
+            echo "MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}" >> .env
+            echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
+            echo "MYSQL_DB=${{ secrets.MYSQL_DB }}" >> .env
+            echo "MYSQL_TIMEOUT=${{ secrets.MYSQL_TIMEOUT }}" >> .env
+            echo "PORT=3003" >> .env
+            echo "TELEGRAM_API_KEY=${{ secrets.TELEGRAM_API_KEY }}" >> .env
+            echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
+            echo "LINE_TOKEN=${{ secrets.LINE_TOKEN }}" >> .env
+            echo "LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}" >> .env
+
+            docker compose build --no-cache
+            docker compose up -d --force-recreate --remove-orphans
+            docker compose rm -f
+
+            docker image prune -f --filter "label=com.docker.compose.project=uneed-cargo"
+
+
+            echo "Deployed release branch ${{ github.ref_name }} successfully!"
