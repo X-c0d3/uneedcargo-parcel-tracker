@@ -79,6 +79,6 @@ jobs:
         if: success()
         uses: richardsimko/update-tag@v1
         with:
-          tag_name: "v${TAG_VERSION}"
+          tag_name: v${{ replace(github.ref_name, 'release/', '') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
