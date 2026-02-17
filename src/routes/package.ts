@@ -19,9 +19,9 @@ router.get('/packages', async (req, res) => {
 
     res.json({
       success: true,
-      data: results,
-      count: results?.length || 0,
       version: AppConfig.VERSION,
+      count: results?.length || 0,
+      data: results,
     });
   } catch (err: any) {
     res.status(500).json({

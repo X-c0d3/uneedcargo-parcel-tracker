@@ -5,7 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3003:3003"
-
+    env_file:
+      - .env
     restart: unless-stopped
     healthcheck:
       test:
