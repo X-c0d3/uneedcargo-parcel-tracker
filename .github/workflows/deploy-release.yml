@@ -19,6 +19,17 @@ jobs:
       - name: Show branch
         run: echo "Deploying from ${{ github.ref_name }}"
 
+      - name: Copy source code to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "./*" # ส่งทุกไฟล์ใน repo
+          target: ${{ secrets.APP_DIR }}
+          strip_components: 0
+
       - name: Deploy to Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -32,9 +43,9 @@ jobs:
           script: |
             cd ${{ secrets.APP_DIR }} || exit 1
 
-            git fetch origin || exit 1
-            git checkout "$DEPLOY_BRANCH" || git checkout -b "$DEPLOY_BRANCH" "origin/$DEPLOY_BRANCH" || exit 1
-            git pull origin "$DEPLOY_BRANCH" || exit 1
+            # git fetch origin || exit 1
+            # git checkout "$DEPLOY_BRANCH" || git checkout -b "$DEPLOY_BRANCH" "origin/$DEPLOY_BRANCH" || exit 1
+            # git pull origin "$DEPLOY_BRANCH" || exit 1
 
             echo "# Auto-generated .env - Deploy from ${{ github.ref_name }}" > .env
             echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
