@@ -77,13 +77,8 @@ jobs:
 
       - name: Create and push Git tag
         if: success()
-        run: |
-          TAG_VERSION="${{ github.ref_name }}"
-          TAG_VERSION="${TAG_VERSION#release/}"
-                
-          git tag "v${TAG_VERSION}"
-                
-          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}.git
-          git push origin "v${TAG_VERSION}"
+        uses: richardsimko/update-tag@v1
+        with:
+          tag_name: "v${TAG_VERSION}"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
