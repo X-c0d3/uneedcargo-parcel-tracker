@@ -47,20 +47,24 @@ jobs:
             # git checkout "$DEPLOY_BRANCH" || git checkout -b "$DEPLOY_BRANCH" "origin/$DEPLOY_BRANCH" || exit 1
             # git pull origin "$DEPLOY_BRANCH" || exit 1
 
-            echo "# Auto-generated .env - Deploy from ${{ github.ref_name }}" > .env
-            echo "MYSQL_HOST=${{ secrets.MYSQL_HOST }}" >> .env
-            echo "MYSQL_PORT=${{ secrets.MYSQL_PORT }}" >> .env
-            echo "MYSQL_DIALECT=${{ secrets.MYSQL_DIALECT }}" >> .env
-            echo "MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}" >> .env
-            echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> .env
-            echo "MYSQL_DB=${{ secrets.MYSQL_DB }}" >> .env
-            echo "MYSQL_TIMEOUT=${{ secrets.MYSQL_TIMEOUT }}" >> .env
-            echo "PORT=3003" >> .env
-            echo "TELEGRAM_API_KEY=${{ secrets.TELEGRAM_API_KEY }}" >> .env
-            echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
-            echo "LINE_TOKEN=${{ secrets.LINE_TOKEN }}" >> .env
-            echo "LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}" >> .env
-            echo "VERSION=${{ github.ref_name }}" >> .env
+            VERSION="${DEPLOY_BRANCH#release/}"
+
+            cat > .env << EOF
+            # Auto-generated .env - Deploy from $DEPLOY_BRANCH
+            VERSION=$VERSION
+            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+            MYSQL_DIALECT=${{ secrets.MYSQL_DIALECT }}
+            MYSQL_USERNAME=${{ secrets.MYSQL_USERNAME }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_DB=${{ secrets.MYSQL_DB }}
+            MYSQL_TIMEOUT=${{ secrets.MYSQL_TIMEOUT }}
+            PORT=3003
+            TELEGRAM_API_KEY=${{ secrets.TELEGRAM_API_KEY }}
+            TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+            LINE_TOKEN=${{ secrets.LINE_TOKEN }}
+            LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}
+            EOF
 
             docker compose build --no-cache || exit 1
             docker compose up -d --force-recreate --remove-orphans || exit 1
