@@ -88,3 +88,9 @@ jobs:
           tag_name: ${{ steps.tag.outputs.name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Send Telegram notification
+        run: |
+          curl -X POST https://api.telegram.org//bot${{ secrets.TELEGRAM_API_KEY }}/sendMessage' \
+          -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+          -d text 'New version: ${{steps.tag.outputs.name}} deployed !!' \
