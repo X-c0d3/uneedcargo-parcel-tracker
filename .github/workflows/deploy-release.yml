@@ -74,3 +74,15 @@ jobs:
 
 
             echo "Deployed release branch ${{ github.ref_name }} successfully!"
+
+      - name: Create and push Git tag
+        if: success()
+        run: |
+          TAG_VERSION="${{ github.ref_name }}"
+          TAG_VERSION="${TAG_VERSION#release/}"
+                
+          git tag "v${TAG_VERSION}"
+                
+          git push origin "v${TAG_VERSION}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
