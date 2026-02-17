@@ -77,10 +77,9 @@ jobs:
 
       - name: Calculate tag name
         id: tag
-        run: |
-          BRANCH="${{ github.ref_name }}"
-          VERSION="${BRANCH#release/}"
-          echo "name=v${VERSION}" >> $GITHUB_OUTPUTREF_NAME: ${{ github.ref_name }}
+        run: echo "name=v${GITHUB_REF_NAME#release/}" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
 
       - name: Create and push Git tag
         if: success()
