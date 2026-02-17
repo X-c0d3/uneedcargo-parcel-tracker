@@ -8,10 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    # Optional: เพิ่ม protection ถ้าต้องการ (เช่น ต้อง approve ก่อน deploy production)
-    # environment: production  # แล้วตั้ง required reviewers ใน repo settings
-
     steps:
       - name: Checkout selected branch
         uses: actions/checkout@v4
