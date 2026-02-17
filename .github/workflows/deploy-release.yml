@@ -60,6 +60,7 @@ jobs:
             echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}" >> .env
             echo "LINE_TOKEN=${{ secrets.LINE_TOKEN }}" >> .env
             echo "LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}" >> .env
+            echo "VERSION=${{ github.ref_name }}" >> .env
 
             docker compose build --no-cache || exit 1
             docker compose up -d --force-recreate --remove-orphans || exit 1

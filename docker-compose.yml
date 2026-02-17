@@ -5,19 +5,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3003:3003"
-    # environment:
-    #   - NODE_ENV=production
-    #   - MYSQL_HOST=????
-    #   - MYSQL_PORT=3307
-    #   - MYSQL_DIALECT==????
-    #   - MYSQL_USERNAME==????
-    #   - MYSQL_PASSWORD==????
-    #   - MYSQL_DB==????
-    #   - MYSQL_TIMEOUT=15000
-    #   - TELEGRAM_API_KEY=8????
-    #   - TELEGRAM_CHAT_ID=????
-    #   - LINE_TOKEN=????
-    #   - LINE_SENDER_ID=????
 
     restart: unless-stopped
     healthcheck:

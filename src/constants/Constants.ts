@@ -31,6 +31,7 @@ const AppConfig = {
   COOKIE: process.env.COOKIE,
   DOWNLOAD_PATH: process.env.DEFAULT_TARGET_FOLDER ? process.env.DEFAULT_TARGET_FOLDER : `${desktopDir}/download`,
   DEFAULT_FILE_EXTENSTION: '.jpg',
+  VERSION: process.env.VERSION,
 };
 
 enum DocumentTypeEnum {
