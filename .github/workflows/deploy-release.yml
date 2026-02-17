@@ -75,10 +75,15 @@ jobs:
 
             echo "Deployed release branch ${{ github.ref_name }} successfully!"
 
+      - name: Calculate tag name
+        id: tag
+        run: |
+          echo "name=v${{ github.ref_name }}" | sed 's/^vrelease\///' >> $GITHUB_OUTPUT
+
       - name: Create and push Git tag
         if: success()
         uses: richardsimko/update-tag@v1
         with:
-          tag_name: v${{ replace(github.ref_name, 'release/', '') }}
+          tag_name: ${{ steps.tag.outputs.name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
