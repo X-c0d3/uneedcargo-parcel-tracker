@@ -31,7 +31,8 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
         let orderNo = productInfo ? productInfo.orderNo : '';
         let statusName = productInfo ? productInfo.status?.statusName : '';
         let totalPrice = (item.countedQuantity ?? 0) + (item.boxCount ?? 0) + (item.others ?? 0) + (item.pricePerKg ?? 0) + (item.pricePerCbm ?? 0);
-        return { orderNo, productName, statusName, ...item, totalPrice };
+        let quantity = productInfo ? productInfo.quantity : 0;
+        return { orderNo, productName, statusName, ...item, quantity, totalPrice };
       });
 
       const allparcelNumber = importedItems.map((pkg: any) => pkg.parcelNumber);
@@ -46,13 +47,13 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
       var itemNotIn = productImportings.filter((v: any) => !allparcelNumber.includes(v.trackingNo ?? ''));
       console.log(
         'รายการที่ยังไม่ได้เข้าระบบ:',
-        itemNotIn.map((v: any) => ` - importeId: ${v.importeId}, orderNo: ${v.orderNo}, parcelNumber: ${v.trackingNo} (${v.status?.statusName}) | ${v.product.productName} `),
+        itemNotIn.map((v: any) => ` - importeId: ${v.importeId}, orderNo: ${v.orderNo}, parcelNumber: ${v.trackingNo} (${v.status?.statusName}) | ${v.product.productName} | จำนวน ${v.quantity} ชิ้น `),
       );
 
       var itemIn = productImportings.filter((v: any) => allparcelNumber.includes(v.trackingNo ?? ''));
       console.log(
         'รายการที่เข้าระบบแล้ว:',
-        itemIn.map((v: any) => ` - importeId: ${v.importeId}, orderNo: ${v.orderNo}, parcelNumber: ${v.trackingNo} (${v.status?.statusName}) | ${v.product.productName} | # ${v.shippingCost}THB`),
+        itemIn.map((v: any) => ` - importeId: ${v.importeId}, orderNo: ${v.orderNo}, parcelNumber: ${v.trackingNo} (${v.status?.statusName}) | ${v.product.productName} | จำนวน ${v.quantity} ชิ้น | # ${v.shippingCost}THB`),
       );
 
       var itemImportings: any = [];
@@ -95,9 +96,12 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
           }
         });
 
-      if (itemImportings.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+      if (itemImportings.length > 0) {
+        sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
+      }
+
       if (itemArrived.length > 0) {
-        sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+        sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
 
         var itemReadyToSend = importedItems.filter((v: any) => v.paymentStatus === '-' && v.arrivalDate !== '-');
         const totalPrice = itemReadyToSend.filter((v) => v.paymentStatus && v.totalPrice != null).reduce((sum, v) => sum + Number(v.totalPrice), 0);
@@ -105,9 +109,12 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
-        sendLineNotify(`มีพัสดุที่พร้อมเข้ารับ ${itemReadyToSend.length} รายการ\n ${itemReadyToSend.map((v: any, index: number) => `\n- ${index + 1}. ${v.parcelNumber} | ${v.productName} | ${v.totalPrice} THB`)} \n\nค่านำเข้าทั้งหมด ${formattedTotal} THB`);
+        sendLineNotify(`มีพัสดุที่พร้อมเข้ารับ ${itemReadyToSend.length} รายการ\n ${itemReadyToSend.map((v: any, index: number) => `- ${index + 1}. ${v.parcelNumber} | ${v.productName} | ${v.quantity} ชิ้น | ${v.totalPrice} THB`).join('\n\n')} \n\nค่านำเข้าทั้งหมด ${formattedTotal} THB`);
       }
-      if (itemReadyForShipping.length > 0) sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | # ${v.totalPrice}THB`).join('\n')}`);
+
+      if (itemReadyForShipping.length > 0) {
+        sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
+      }
 
       //console.log(importedItems);
       //console.table(importedItems);
