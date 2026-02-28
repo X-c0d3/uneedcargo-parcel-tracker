@@ -46,15 +46,15 @@ router.get('/summary', async (req, res) => {
     let msg = `
 🎉 สรุปยอดขาย ${result?.month} ${year} 🏦
 --------------------------
-💰Shopee (UYJ22): ${result?.shopee || '-'} ฿
-💰Lazada (UYJ22): ${result?.lazada || '-'} ฿
-💰Tiktok (UYJ22): ${result?.tiktok || '-'} ฿
-💰Nocnoc (UYJ22): ${result?.nocnoc || '-'} ฿
-💰Shopee2 (RockDev): ${result?.shopee2 || '-'} ฿
-💰Lazada2 (RockDev): ${result?.lazada2 || '-'} ฿
-💰นอกระบบ: ฿ ${result?.other ?? '-'} ฿
+💰Shopee (UYJ22): ${result?.shopee || '-'}
+💰Lazada (UYJ22): ${result?.lazada || '-'}
+💰Tiktok (UYJ22): ${result?.tiktok || '-'}
+💰Nocnoc (UYJ22): ${result?.nocnoc || '-'}
+💰Shopee2 (RockDev): ${result?.shopee2 || '-'}
+💰Lazada2 (RockDev): ${result?.lazada2 || '-'}
+💰นอกระบบ: ฿ ${result?.other ?? '-'}
 --------------------------
-✅ รวมยอดขายทั้งหมด: ${result?.summary} ฿
+✅ รวมยอดขายทั้งหมด: ${result?.summary}
 🏝เติบโตจากเดือนที่แล้ว: ${result?.grow} 🎁
 `;
 
