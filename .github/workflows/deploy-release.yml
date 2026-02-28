@@ -60,6 +60,9 @@ jobs:
             TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
             LINE_TOKEN=${{ secrets.LINE_TOKEN }}
             LINE_SENDER_ID=${{ secrets.LINE_SENDER_ID }}
+            GOOGLESHEET_ID=${{ secrets.GOOGLESHEET_ID }}
+            GOOGLE_SERVICE_ACCOUNT_EMAIL=${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
+            GOOGLE_PRIVATE_KEY=${{ secrets.GOOGLE_PRIVATE_KEY }}
             EOF
 
             docker compose build --no-cache || exit 1

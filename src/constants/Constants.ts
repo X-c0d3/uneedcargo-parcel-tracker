@@ -31,6 +31,9 @@ const AppConfig = {
   COOKIE: process.env.COOKIE,
   DOWNLOAD_PATH: process.env.DEFAULT_TARGET_FOLDER ? process.env.DEFAULT_TARGET_FOLDER : `${desktopDir}/download`,
   DEFAULT_FILE_EXTENSTION: '.jpg',
+  GOOGLESHEET_ID: process.env.GOOGLESHEET_ID,
+  GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+  GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
   VERSION: process.env.VERSION,
 };
 
@@ -39,6 +42,8 @@ enum DocumentTypeEnum {
   RECEIPT = 2,
   QUOTATION = 3,
 }
+
+const MonthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 
 const HEADER = {
   timeout: 50000,
@@ -67,4 +72,4 @@ const DBconfig = {
   MYSQL_TIMEOUT: process.env.MYSQL_TIMEOUT || 5000,
 };
 
-export { AppConfig, HEADER, DocumentTypeEnum, DBconfig };
+export { AppConfig, HEADER, DocumentTypeEnum, DBconfig, MonthNames };
