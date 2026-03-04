@@ -7,10 +7,9 @@ import { toSafeNumber } from '../util/Helper';
 import Db from '../db/config';
 import { productImports } from '../db/models/productImports';
 import { jobs } from '../db/models/jobs';
-import { sendTelegramNotify } from '../util/TelegramNotify';
 import { sendLineNotify } from '../util/LineNotify';
 
-const DEFAULT_PAGE = process.env.DEFAULT_PAGE || 1;
+const MAX_PAGES = Number(process.env.MAX_PAGES || 3);
 
 export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false): Promise<PackageItem[] | null> => {
   const { jobId, shopId } = job;
@@ -97,11 +96,11 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
         });
 
       if (itemImportings.length > 0) {
-        sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
+        await sendLineNotify(`มีสินค้าอยู่ระหว่างนำเข้า ${itemImportings.length} รายการ\n${itemImportings.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
       }
 
       if (itemArrived.length > 0) {
-        sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
+        await sendLineNotify(`มีสินค้าถึงไทยแล้ว ${itemArrived.length} รายการ\n${itemArrived.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
 
         var itemReadyToSend = importedItems.filter((v: any) => v.paymentStatus === '-' && v.arrivalDate !== '-');
         const totalPrice = itemReadyToSend.filter((v) => v.paymentStatus && v.totalPrice != null).reduce((sum, v) => sum + Number(v.totalPrice), 0);
@@ -109,11 +108,11 @@ export const fetchPackageList = async (job: jobs, hasTriedLogin: boolean = false
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
-        sendLineNotify(`มีพัสดุที่พร้อมเข้ารับ ${itemReadyToSend.length} รายการ\n ${itemReadyToSend.map((v: any, index: number) => `- ${index + 1}. ${v.parcelNumber} | ${v.productName} | ${v.quantity} ชิ้น | ${v.totalPrice} THB`).join('\n\n')} \n\nค่านำเข้าทั้งหมด ${formattedTotal} THB`);
+        await sendLineNotify(`มีพัสดุที่พร้อมเข้ารับ ${itemReadyToSend.length} รายการ\n ${itemReadyToSend.map((v: any, index: number) => `- ${index + 1}. ${v.parcelNumber} | ${v.productName} | ${v.quantity} ชิ้น | ${v.totalPrice} THB`).join('\n\n')} \n\nค่านำเข้าทั้งหมด ${formattedTotal} THB`);
       }
 
       if (itemReadyForShipping.length > 0) {
-        sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
+        await sendLineNotify(`มีสินค้าอยู่ระหว่างนำส่งในไทย ${itemReadyForShipping.length} รายการ\n${itemReadyForShipping.map((v: any) => ` - ${v.parcelNumber} | ${v.product.productName} | ${v.dataValues.quantity} ชิ้น | # ${v.totalPrice}THB`).join('\n\n')}`);
       }
 
       //console.log(importedItems);
@@ -146,56 +145,62 @@ const getUneedCargoPackageList = async (job: jobs): Promise<PackageItem[]> => {
   if (!job.actived) {
     return [];
   }
-
-  console.log(`Fetching data from ${api_url} (page ${DEFAULT_PAGE})`);
   console.log(`PHPSESSID : ${cookie}`);
 
-  var response = await axios.post(`${api_url}/application/package/list`, 'page=' + DEFAULT_PAGE + '&search=&type=&status=', {
-    headers: { 'x-requested-with': 'XMLHttpRequest', Cookie: cookie },
-  });
-  const html = response.data;
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-
-  const headerCells = document.querySelectorAll('thead tr th');
-  const headers = Array.from(headerCells).map((th) => th.textContent?.trim() || '');
-  const rows = document.querySelectorAll('tbody tr');
-
-  rows.forEach((row) => {
-    const cells = row.querySelectorAll('td');
-
-    if (cells.length === 0) return;
-
-    const rowData: Partial<PackageItem> = {};
-    cells.forEach((cell, index) => {
-      const thaiHeader = headers[index] || '';
-      const englishKey = columnMapping[thaiHeader];
-
-      if (!englishKey) return;
-
-      let value = cell.textContent?.trim() || '';
-
-      if (englishKey === 'parcelNumber') {
-        const link = cell.querySelector('a');
-        if (link) value = link.textContent?.trim() || value;
-      }
-
-      const currencySpan = cell.querySelector('span.currency');
-      if (currencySpan) {
-        value = currencySpan.textContent?.trim() || '';
-      }
-
-      value = value.replace(/\s+/g, ' ').trim();
-
-      if (englishKey === 'weightKg' || englishKey === 'countedQuantity' || englishKey === 'volumeCbm' || englishKey === 'boxCount' || englishKey === 'others' || englishKey === 'pricePerKg' || englishKey === 'pricePerCbm') {
-        rowData[englishKey] = toSafeNumber(value);
-      } else {
-        rowData[englishKey] = value;
+  for (let page = MAX_PAGES; page >= 1; page--) {
+    console.log(`Fetching data from ${api_url} (page ${page})`);
+    var response = await axios.post(`${api_url}/application/package/list`, 'page=' + page + '&search=&type=&status=', {
+      headers: {
+        'x-requested-with': 'XMLHttpRequest',
+        Cookie: cookie
       }
     });
 
-    results.push(rowData as PackageItem);
-  });
+    const html = response.data;
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    const headerCells = document.querySelectorAll('thead tr th');
+    const headers = Array.from(headerCells).map((th) => th.textContent?.trim() || '');
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach((row) => {
+      const cells = row.querySelectorAll('td');
+
+      if (cells.length === 0) return;
+
+      const rowData: Partial<PackageItem> = {};
+      cells.forEach((cell, index) => {
+        const thaiHeader = headers[index] || '';
+        const englishKey = columnMapping[thaiHeader];
+
+        if (!englishKey) return;
+
+        let value = cell.textContent?.trim() || '';
+
+        if (englishKey === 'parcelNumber') {
+          const link = cell.querySelector('a');
+          if (link) value = link.textContent?.trim() || value;
+        }
+
+        const currencySpan = cell.querySelector('span.currency');
+        if (currencySpan) {
+          value = currencySpan.textContent?.trim() || '';
+        }
+
+        value = value.replace(/\s+/g, ' ').trim();
+
+        if (englishKey === 'weightKg' || englishKey === 'countedQuantity' || englishKey === 'volumeCbm' || englishKey === 'boxCount' || englishKey === 'others' || englishKey === 'pricePerKg' || englishKey === 'pricePerCbm') {
+          rowData[englishKey] = toSafeNumber(value);
+        } else {
+          rowData[englishKey] = value;
+        }
+      });
+
+      results.push(rowData as PackageItem);
+    });
+  }
+
   return results;
 };
 
