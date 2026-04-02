@@ -52,7 +52,7 @@ router.get('/summary', async (req, res) => {
 💰Nocnoc : ${result?.nocnoc || '-'}
 💰Shopee2 : ${result?.shopee2 || '-'}
 💰Lazada2 : ${result?.lazada2 || '-'}
-💰นอกระบบ: ${result?.other ?? '-'}
+💰นอกระบบ : ${result?.other ?? '-'}
 --------------------------
 ✅ รวมยอดขายทั้งหมด: ${result?.summary}
 🏝เติบโตจากเดือนที่แล้ว: ${result?.grow} 🎁
