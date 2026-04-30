@@ -40,7 +40,7 @@ router.get('/summary', async (req, res) => {
     const year = now.getFullYear();
     const month = now.getMonth();
 
-    var result: any = data.find((item) => item.year === year && item.month.trim() === MonthNames[month - 1]);
+    var result: any = data.find((item) => item.year === year && item.month.trim() === MonthNames[month]);
     console.log('result', result);
 
     let msg = `
@@ -49,7 +49,6 @@ router.get('/summary', async (req, res) => {
 💰Shopee : ${result?.shopee || '-'}
 💰Lazada : ${result?.lazada || '-'}
 💰Tiktok : ${result?.tiktok || '-'}
-💰Nocnoc : ${result?.nocnoc || '-'}
 💰Shopee2 : ${result?.shopee2 || '-'}
 💰Lazada2 : ${result?.lazada2 || '-'}
 💰นอกระบบ : ${result?.other ?? '-'}
