@@ -1,5 +1,7 @@
 import _ from 'lodash';
 import axios from 'axios';
+import { wrapper } from 'axios-cookiejar-support';
+import { CookieJar } from 'tough-cookie';
 import { Op } from 'sequelize';
 import { JSDOM } from 'jsdom';
 import { PackageItem, columnMapping } from '../types/PackageItem';
@@ -152,6 +154,7 @@ const getUneedCargoPackageList = async (job: jobs): Promise<PackageItem[]> => {
     var response = await axios.post(`${api_url}/application/package/list`, 'page=' + page + '&search=&type=&status=', {
       headers: {
         'x-requested-with': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         Cookie: cookie
       }
     });
@@ -208,35 +211,39 @@ const login = async (job: jobs) => {
   const { jobId, shopId, api_url, username, password } = job;
 
   console.log('---->> Login <<----');
-  var HEADERS = {
+
+  // Use a real cookie jar so every Set-Cookie the site sends (PHPSESSID, uneed, uneed_p, ...)
+  // is captured and replayed automatically, the same way a browser session works.
+  const jar = new CookieJar();
+  const client = wrapper(axios.create({ jar, withCredentials: true }));
+
+  try {
+    // Visit the signin page first so the session the login POST depends on already exists,
+    // mirroring what a browser does before submitting the login form.
+    await client.get(`${api_url}/application/signin`);
+  } catch (err: any) {
+    console.warn('Failed to load signin page before login:', err.message);
+  }
+
+  const HEADERS = {
     headers: {
       'x-requested-with': 'XMLHttpRequest',
       'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
     },
   };
-  var response = await axios.post(`${api_url}/application/signin/go`, `username=${username}&password=${password}`, HEADERS);
+
+  const response = await client.post(`${api_url}/application/signin/go`, `username=${username}&password=${password}&submit=`, HEADERS);
   console.log('Login response ', response.data);
-  const setCookieHeader = response.headers['set-cookie'];
-  console.log('raw PHPSESSID ', setCookieHeader);
-  if (!setCookieHeader || setCookieHeader.length === 0) {
-    console.error('Not found Set-Cookie in response header');
+
+  const cookieString = await jar.getCookieString(api_url);
+  console.log('cookieString after login:', cookieString);
+
+  if (!cookieString) {
+    console.error('ไม่พบ cookie หลัง login');
     return null;
   }
 
-  let phpSessId = null;
-  for (const cookieStr of setCookieHeader) {
-    if (cookieStr.includes('uneed=')) {
-      phpSessId = cookieStr.split(';')[0].trim();
-      break;
-    }
-  }
-
-  if (!phpSessId) {
-    console.error('ไม่พบ PHPSESSID ใน Set-Cookie');
-    return null;
-  }
-
-  await Db.jobs.update({ cookie: phpSessId, modifiedDatetime: new Date() }, { where: { jobId: jobId, shopId: shopId as number } });
+  await Db.jobs.update({ cookie: cookieString, modifiedDatetime: new Date() }, { where: { jobId: jobId, shopId: shopId as number } });
 };
 
 export const getTask = async (jobId: number): Promise<jobs | null> => await Db.jobs.findOne({ where: { jobId: jobId, actived: 1 } });
